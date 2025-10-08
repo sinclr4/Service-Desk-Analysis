@@ -20,8 +20,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r azure_function_app/requirements.txt --target /home/site/wwwroot/.python_packages/lib/site-packages
+          pip install -r azure_function_app/requirements.txt
 
+      - name: Prepare function app with dependencies
+        run: |
+          mkdir -p azure_function_app/.python_packages/lib/site-packages
+          pip install -r azure_function_app/requirements.txt --target azure_function_app/.python_packages/lib/site-packages
+          
       - name: Archive function app
         run: |
           cd azure_function_app
