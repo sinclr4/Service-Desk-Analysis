@@ -1,0 +1,10 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "<your_connection_string>",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "OPENAI_API_KEY": "<your_openai_api_key>",
+    "OPENAI_ENDPOINT": "<your_openai_endpoint>",
+    "OPENAI_DEPLOYMENT": "<your_deployment_name>"
+  }
+}
