@@ -131,11 +131,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         if method == "classify_single":
             ticket = req_body.get("ticket")
             result = classify_ticket(ticket)
-            return func.HttpResponse(json.dumps({"classification": result}), mimetype="application/json")
+            return func.HttpResponse(json.dumps({"classification": result}), mimetype="application/csv")
         elif method == "classify_tickets":
             tickets = req_body.get("tickets", [])
             results = [classify_ticket(t) for t in tickets]
-            return func.HttpResponse(json.dumps({"classifications": results}), mimetype="application/json")
+            return func.HttpResponse(json.dumps({"classifications": results}), mimetype="application/csv")
         else:
             return func.HttpResponse("Invalid method.", status_code=400)
     except Exception as e:
