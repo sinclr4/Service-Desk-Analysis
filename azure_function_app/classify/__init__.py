@@ -88,7 +88,7 @@ def process_csv(req: func.HttpRequest) -> func.HttpResponse:
         # Get optional limit parameter
         limit = req.params.get('limit')
         limit = int(limit) if limit else None
-
+        limit = 500  # Hard limit for testing
         count = 0
         for row in reader:
             # Check if we've reached the limit
