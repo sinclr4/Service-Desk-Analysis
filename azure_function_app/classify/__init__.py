@@ -69,13 +69,14 @@ Category:
 def process_csv(req: func.HttpRequest) -> func.HttpResponse:
     """Process a CSV file and classify the Description column."""
     try:
+        logging.info("Start of process_csv function")
         # Get the CSV content from the request body
         csv_content = req.get_body().decode('utf-8')
         
         # Set up input and output streams
         input_stream = io.StringIO(csv_content)
         output_stream = io.StringIO()
-        
+        logging.info("Start of process_csv function", extra={"csv_content": csv_content})
         # Read and parse the CSV
         reader = csv.DictReader(input_stream)
         fieldnames = reader.fieldnames + ['Category']
@@ -124,7 +125,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         content_type = req.headers.get('content-type', '')
         if content_type.startswith('text/csv') or content_type.startswith('application/csv'):
             return process_csv(req)
-            
+        logging.info("Return from process_csv function")    
         # Process JSON requests
         req_body = req.get_json()
         method = req_body.get("method")
