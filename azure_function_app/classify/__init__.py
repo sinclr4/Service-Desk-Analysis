@@ -1,20 +1,24 @@
 import os
-import openai
 import azure.functions as func
 import json
 import logging
 import io
 import csv
 import time
+from openai import AzureOpenAI
 
+# Get environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_ENDPOINT = os.getenv("OPENAI_ENDPOINT")
 OPENAI_DEPLOYMENT = os.getenv("OPENAI_DEPLOYMENT")
 
-openai.api_type = "azure"
-openai.api_key = OPENAI_API_KEY
-openai.api_base = OPENAI_ENDPOINT
-openai.api_version = "2023-05-15"
+# Initialize the Azure OpenAI client
+client = AzureOpenAI(
+    api_key=OPENAI_API_KEY,
+    azure_endpoint=OPENAI_ENDPOINT,
+    api_version="2023-05-15"
+)
+
 
 # Define categories for classification
 CATEGORIES = [
@@ -57,14 +61,12 @@ Ticket Description:
 
 Category:
 """
-    response = openai.ChatCompletion.create(
-        engine=OPENAI_DEPLOYMENT,
-        messages=[{"role": "system", "content": "You are a helpful assistant that classifies service desk tickets."},
-                  {"role": "user", "content": prompt}],
-        max_tokens=20,
-        temperature=0
-    )
-    return response.choices[0].message["content"].strip()
+    response = client.chat.completions.create(model=OPENAI_DEPLOYMENT,
+    messages=[{"role": "system", "content": "You are a helpful assistant that classifies service desk tickets."},
+              {"role": "user", "content": prompt}],
+    max_tokens=20,
+    temperature=0)
+    return response.choices[0].message.content.strip()
 
 def process_csv(req: func.HttpRequest) -> func.HttpResponse:
     """Process a CSV file and classify the Description column."""
@@ -72,7 +74,7 @@ def process_csv(req: func.HttpRequest) -> func.HttpResponse:
         logging.info("Start of process_csv function")
         # Get the CSV content from the request body
         csv_content = req.get_body().decode('utf-8')
-        
+
         # Set up input and output streams
         input_stream = io.StringIO(csv_content)
         output_stream = io.StringIO()
@@ -82,17 +84,17 @@ def process_csv(req: func.HttpRequest) -> func.HttpResponse:
         fieldnames = reader.fieldnames + ['Category']
         writer = csv.DictWriter(output_stream, fieldnames=fieldnames)
         writer.writeheader()
-        
+
         # Get optional limit parameter
         limit = req.params.get('limit')
         limit = int(limit) if limit else None
-        
+
         count = 0
         for row in reader:
             # Check if we've reached the limit
             if limit and count >= limit:
                 break
-                
+
             description = row.get('Description', '')
             if description:
                 # Classify the ticket description
@@ -101,11 +103,11 @@ def process_csv(req: func.HttpRequest) -> func.HttpResponse:
                 time.sleep(0.5)
             else:
                 category = "No Description"
-                
+
             row['Category'] = category
             writer.writerow(row)
             count += 1
-        
+
         # Return the processed CSV
         return func.HttpResponse(
             output_stream.getvalue(),
@@ -132,11 +134,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         if method == "classify_single":
             ticket = req_body.get("ticket")
             result = classify_ticket(ticket)
-            return func.HttpResponse(json.dumps({"classification": result}), mimetype="application/csv")
+            return func.HttpResponse(json.dumps({"classification": result}), mimetype="application/json")
         elif method == "classify_tickets":
             tickets = req_body.get("tickets", [])
             results = [classify_ticket(t) for t in tickets]
-            return func.HttpResponse(json.dumps({"classifications": results}), mimetype="application/csv")
+            return func.HttpResponse(json.dumps({"classifications": results}), mimetype="application/json")
         else:
             return func.HttpResponse("Invalid method.", status_code=400)
     except Exception as e:
